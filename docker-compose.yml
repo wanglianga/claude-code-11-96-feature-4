@@ -1,0 +1,8 @@
+services:
+  classroom-workbench:
+    build: .
+    image: classroom-incident-workbench:1.0.0
+    container_name: classroom-incident-workbench
+    ports:
+      - "8080:80"
+    restart: unless-stopped
