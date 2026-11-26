@@ -18,6 +18,23 @@ const EVENT_TEXT: Record<AppEvent['type'], (e: AppEvent) => string> = {
   'reassignment.published': (e) => e.type === 'reassignment.published' ? `方案 ${e.planId.slice(-6)} 发布，发出 ${e.notificationIds.length} 条同版本通知` : '',
   'reassignment.cancelled': (e) => e.type === 'reassignment.cancelled' ? `方案取消：${e.reason}` : '',
   'notification.sent': (e) => e.type === 'notification.sent' ? `通知 v${e.version} 发给 ${e.className}：改至 ${e.roomName}（${e.supersedesId ? '旧版本已作废' : '首版'}）` : '',
+  'transit.journeyConfirmed': (e) => e.type === 'transit.journeyConfirmed' ? `出行确认：${e.groupId} ${e.mode === 'walk' ? '步行护送' : '登记接驳'} v${e.version}，${minToHM(e.departMin)}→${minToHM(e.arriveMin)}，护送阶段 ${e.phases.length} 个` : '',
+  'transit.journeyRebooked': (e) => e.type === 'transit.journeyRebooked' ? `出行重新确认：${e.groupId} v${e.version}（替代 ${e.replacesJourneyId.slice(-6)}），${e.mode === 'walk' ? '步行护送' : '登记接驳'} ${minToHM(e.departMin)}→${minToHM(e.arriveMin)}` : '',
+  'transit.journeyCancelled': (e) => e.type === 'transit.journeyCancelled' ? `行程取消：${e.reason}` : '',
+  'transit.phaseAccepted': (e) => e.type === 'transit.phaseAccepted' ? `护送员接单：阶段 ${e.phaseId.slice(-6)}` : '',
+  'transit.pickupConfirmed': (e) => e.type === 'transit.pickupConfirmed' ? `确认接到学生 ${e.studentIds.length} 人，阶段写入实际负责集合` : '',
+  'transit.boarded': (e) => e.type === 'transit.boarded' ? `登记上车 ${e.studentIds.length} 人（班次 ${e.departureId}）` : '',
+  'transit.alighted': (e) => e.type === 'transit.alighted' ? `登记下车 ${e.studentIds.length} 人（下车 ≠ 到课）` : '',
+  'transit.handedToTeacher': (e) => e.type === 'transit.handedToTeacher' ? `交接给接收教师 ${e.studentIds.length} 人` : '',
+  'transit.arrivalConfirmed': (e) => e.type === 'transit.arrivalConfirmed' ? `教师确认到课：${e.studentId}` : '',
+  'transit.phaseHandedOver': (e) => e.type === 'transit.phaseHandedOver' ? `途中交接：${e.studentIds.length} 名学生由接续护送员实际确认接收，原责任解除` : '',
+  'transit.departureCancelled': (e) => e.type === 'transit.departureCancelled' ? `班次取消：${e.departureId}（${e.reason}）` : '',
+  'transit.walkEdgeClosed': (e) => e.type === 'transit.walkEdgeClosed' ? `道路关闭：${e.edgeId}（${e.reason}）` : '',
+  'transit.walkEdgeReopened': (e) => e.type === 'transit.walkEdgeReopened' ? `设施解除封路：${e.edgeId} 恢复通行` : '',
+  'transit.escortLeaveSet': (e) => e.type === 'transit.escortLeaveSet' ? `护送员 ${e.escortId} ${e.onLeave ? '请假' : '销假'}` : '',
+  'transit.departureLoadSet': (e) => e.type === 'transit.departureLoadSet' ? `班次 ${e.departureId} 临时占用：座位 ${e.reservedSeats}、固定位 ${e.reservedBays}` : '',
+  'transit.notificationSent': (e) => e.type === 'transit.notificationSent' ? `出行通知 v${e.version} 发给 ${e.groupId}（${e.supersedesId ? '旧版本已作废' : '首版'}）` : '',
+  'transit.notificationReceived': (e) => e.type === 'transit.notificationReceived' ? `用户 ${e.userId} 接收出行通知` : '',
 };
 
 export function ReplayView() {

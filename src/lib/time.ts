@@ -20,3 +20,8 @@ export function todayISO(atMin: number): string {
   // 模拟场景固定在 2026-11-26，时钟只影响业务分钟
   return `2026-11-26T${minToHM(atMin)}:00`;
 }
+
+/** 从事件时间戳还原业务分钟（todayISO 的逆运算） */
+export function isoToMin(iso: string): number {
+  return hmToMin(iso.slice(11, 16));
+}

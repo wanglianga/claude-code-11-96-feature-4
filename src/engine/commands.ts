@@ -26,7 +26,8 @@ export function setSeqStart(n: number): void {
 type DistributiveOmit<T, K extends string> = T extends unknown ? Omit<T, K> : never;
 type EventBody = DistributiveOmit<AppEvent, 'seq' | 'at'>;
 
-function ev(partial: EventBody, atMin: number): AppEvent {
+/** 构造事件（共享模块级 seq 计数器；transit 命令层同用，保证全局唯一递增） */
+export function ev(partial: EventBody, atMin: number): AppEvent {
   seqCounter += 1;
   return { seq: seqCounter, at: todayISO(atMin), ...partial } as AppEvent;
 }

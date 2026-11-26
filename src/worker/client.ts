@@ -1,9 +1,10 @@
 // Worker Promise 客户端：请求/响应配对，向 React 层暴露 async API
 
-import type { AppEvent, Draft, Snapshot } from '../types';
+import type { AppEvent, Draft, Snapshot, TravelMode } from '../types';
 import type { WorkerRequest, WorkerResponse } from './incident.worker';
 import type { PlanProposal, RoomCheck } from '../engine/scheduling';
 import type { DraftCheck } from '../engine/commands';
+import type { CandidatePlan } from '../engine/transit';
 import { setSeqStart } from '../engine/commands';
 
 let reqSeq = 0;
@@ -66,6 +67,9 @@ export const workerClient = {
   },
   checkDraft(draft: Draft, nowMin: number): Promise<DraftCheck> {
     return call<DraftCheck>({ type: 'check-draft', draft, nowMin }).then((r) => r.payload!);
+  },
+  transitCandidate(groupId: string, mode: TravelMode, excludeJourneyId?: string): Promise<CandidatePlan> {
+    return call<CandidatePlan>({ type: 'transit-candidate', groupId, mode, excludeJourneyId }).then((r) => r.payload!);
   },
   listEvents(): Promise<AppEvent[]> {
     return call<AppEvent[]>({ type: 'list-events' }).then((r) => r.payload!);

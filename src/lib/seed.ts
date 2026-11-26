@@ -1,4 +1,15 @@
-import type { Course, Room, User } from '../types';
+import type {
+  Course,
+  EscortDef,
+  Room,
+  ShuttleDepartureDef,
+  ShuttleRouteDef,
+  StudentGroup,
+  TransitLocation,
+  TransitStudent,
+  User,
+  WalkEdgeDef,
+} from '../types';
 import { hmToMin } from './time';
 
 // ---------- 用户（测试账号） ----------
@@ -9,6 +20,8 @@ export const SEED_USERS: User[] = [
   { id: 'u_facility', name: '王设施（设施人员）', role: 'facility' },
   { id: 'u_dispatch', name: '陈调度（调度员）', role: 'dispatcher' },
   { id: 'u_repair', name: '赵维修（维修人员）', role: 'repair' },
+  { id: 'u_escort_1', name: '李护送（护送员）', role: 'escort' },
+  { id: 'u_escort_2', name: '王护送（护送员）', role: 'escort' },
 ];
 
 // ---------- 教室资源 ----------
@@ -138,4 +151,94 @@ export function roomById(id: string, rooms: Room[]): Room {
   const r = rooms.find((x) => x.id === id);
   if (!r) throw new Error(`未知教室: ${id}`);
   return r;
+}
+
+// ---------- 无障碍出行：连廊封闭后的步行护送 / 登记接驳 ----------
+// 场景：连廊（O↔C 直达）封闭，四名需要无障碍协助的学生分两组，
+// 第一组 08:50 出发、09:10 前到 C 楼；第二组 09:10 出发、09:30 前到 C 楼。
+// 所有输入为整分钟；允许在合法地点等待；查询固定在同一份路网/班次/资源快照上。
+
+export const TRANSIT_WINDOW = {
+  startMin: hmToMin('08:45'), // 08:45
+  endMin: hmToMin('10:00'), // 10:00（含两端共 76 个分钟刻度）
+} as const;
+
+export const SEED_TRANSIT_LOCATIONS: TransitLocation[] = [
+  { id: 'loc_O', code: 'O', name: 'O · 宿舍区门厅' },
+  { id: 'loc_S', code: 'S', name: 'S · 接驳站' },
+  { id: 'loc_W', code: 'W', name: 'W · 绕行连廊口' },
+  { id: 'loc_C', code: 'C', name: 'C · C 楼' },
+];
+
+// 已批准无障碍路径；we_OC 为封闭中的直达连廊（设施解除前不自动恢复）
+export const SEED_WALK_EDGES: WalkEdgeDef[] = [
+  { id: 'we_OC', fromId: 'loc_O', toId: 'loc_C', minutes: 5, accessible: true, closedSeed: true, note: '直达连廊（封闭中）' },
+  { id: 'we_OS', fromId: 'loc_O', toId: 'loc_S', minutes: 2, accessible: true, closedSeed: false, note: null },
+  { id: 'we_OW', fromId: 'loc_O', toId: 'loc_W', minutes: 10, accessible: true, closedSeed: false, note: null },
+  { id: 'we_WC', fromId: 'loc_W', toId: 'loc_C', minutes: 10, accessible: true, closedSeed: false, note: null },
+];
+
+// 班车：S -> C，8 分钟，4 座 + 1 个轮椅固定位
+export const SEED_SHUTTLE_ROUTES: ShuttleRouteDef[] = [
+  { id: 'rt_SC', fromId: 'loc_S', toId: 'loc_C', rideMinutes: 8, seats: 4, wheelchairBays: 1 },
+];
+
+export const SEED_DEPARTURES: ShuttleDepartureDef[] = [
+  { id: 'dep_0900', routeId: 'rt_SC', departMin: hmToMin('09:00') },
+  { id: 'dep_0920', routeId: 'rt_SC', departMin: hmToMin('09:20') },
+];
+
+export const SEED_STUDENTS: TransitStudent[] = [
+  { id: 'st_1', name: '同学甲', wheelchair: true, groupId: 'g1' },
+  { id: 'st_2', name: '同学乙', wheelchair: false, groupId: 'g1' },
+  { id: 'st_3', name: '同学丙', wheelchair: true, groupId: 'g2' },
+  { id: 'st_4', name: '同学丁', wheelchair: false, groupId: 'g2' },
+];
+
+export const SEED_GROUPS: StudentGroup[] = [
+  {
+    id: 'g1',
+    name: '第一组',
+    studentIds: ['st_1', 'st_2'],
+    originId: 'loc_O',
+    destId: 'loc_C',
+    departMin: hmToMin('08:50'),
+    arriveByMin: hmToMin('09:10'),
+  },
+  {
+    id: 'g2',
+    name: '第二组',
+    studentIds: ['st_3', 'st_4'],
+    originId: 'loc_O',
+    destId: 'loc_C',
+    departMin: hmToMin('09:10'),
+    arriveByMin: hmToMin('09:30'),
+  },
+];
+
+// 两名护送员 08:45-10:00 可用，每人最多同时带 2 人
+export const SEED_ESCORTS: EscortDef[] = [
+  { id: 'u_escort_1', name: '李护送', baseLocId: 'loc_O', fromMin: hmToMin('08:45'), toMin: hmToMin('10:00'), maxStudents: 2 },
+  { id: 'u_escort_2', name: '王护送', baseLocId: 'loc_O', fromMin: hmToMin('08:45'), toMin: hmToMin('10:00'), maxStudents: 2 },
+];
+
+/** C 楼接收教师（交接与确认到课） */
+export const RECEIVING_TEACHER_ID = 'u_teacher_a';
+
+export function locationById(id: string): TransitLocation {
+  const l = SEED_TRANSIT_LOCATIONS.find((x) => x.id === id);
+  if (!l) throw new Error(`未知地点: ${id}`);
+  return l;
+}
+
+export function groupById(id: string): StudentGroup {
+  const g = SEED_GROUPS.find((x) => x.id === id);
+  if (!g) throw new Error(`未知分组: ${id}`);
+  return g;
+}
+
+export function escortById(id: string): EscortDef {
+  const e = SEED_ESCORTS.find((x) => x.id === id);
+  if (!e) throw new Error(`未知护送员: ${id}`);
+  return e;
 }

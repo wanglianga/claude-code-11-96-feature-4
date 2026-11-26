@@ -1,11 +1,12 @@
 // WebWorker：事件日志的唯一写入口，负责持久化、回放快照与排课计算
 // 主线程只通过消息与 worker 通信，保证 UI 渲染不被回放/计算阻塞
 
-import type { AppEvent, Draft, Snapshot } from '../types';
+import type { AppEvent, Draft, Snapshot, TravelMode } from '../types';
 import { appendEvent, clearEvents, getAllEvents } from '../db/idb';
 import { initialSnapshot, replay } from '../engine/reducer';
 import { computePlans, evaluateRooms } from '../engine/scheduling';
 import { checkDraft } from '../engine/commands';
+import { planCandidate } from '../engine/transit';
 
 export type WorkerRequest =
   | { reqId: number; type: 'boot' }
@@ -14,6 +15,7 @@ export type WorkerRequest =
   | { reqId: number; type: 'compute-plans' }
   | { reqId: number; type: 'evaluate-rooms'; courseId: string }
   | { reqId: number; type: 'check-draft'; draft: Draft; nowMin: number }
+  | { reqId: number; type: 'transit-candidate'; groupId: string; mode: TravelMode; excludeJourneyId?: string }
   | { reqId: number; type: 'list-events' }
   | { reqId: number; type: 'reset' };
 
@@ -66,6 +68,11 @@ self.onmessage = async (msg: MessageEvent<WorkerRequest>) => {
       case 'check-draft': {
         const verdict = checkDraft(current, req.draft, req.nowMin);
         self.postMessage({ reqId: req.reqId, ok: true, payload: verdict } satisfies WorkerResponse);
+        break;
+      }
+      case 'transit-candidate': {
+        const plan = planCandidate(current, req.groupId, req.mode, req.excludeJourneyId);
+        self.postMessage({ reqId: req.reqId, ok: true, payload: plan } satisfies WorkerResponse);
         break;
       }
       case 'list-events': {

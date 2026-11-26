@@ -6,6 +6,7 @@ import { DispatchView } from './views/DispatchView';
 import { RepairView } from './views/RepairView';
 import { ResourcesView } from './views/ResourcesView';
 import { ReplayView } from './views/ReplayView';
+import { TransitView } from './views/TransitView';
 import { minToHM } from './lib/time';
 import type { Role } from './types';
 
@@ -14,6 +15,7 @@ const NAV: { key: string; label: string; role: Role | null }[] = [
   { key: 'facility', label: '设施工作台', role: 'facility' },
   { key: 'dispatch', label: '调度工作台', role: 'dispatcher' },
   { key: 'repair', label: '维修工作台', role: 'repair' },
+  { key: 'transit', label: '无障碍出行', role: null },
   { key: 'resources', label: '资源与课表', role: null },
   { key: 'replay', label: '事件回放', role: null },
 ];
@@ -23,6 +25,7 @@ const ROLE_LABELS: Record<Role, string> = {
   facility: '设施人员',
   dispatcher: '调度员',
   repair: '维修人员',
+  escort: '护送员',
 };
 
 function Shell() {
@@ -90,6 +93,7 @@ function Shell() {
           {tab === 'facility' && <FacilityView />}
           {tab === 'dispatch' && <DispatchView />}
           {tab === 'repair' && <RepairView />}
+          {tab === 'transit' && <TransitView />}
           {tab === 'resources' && <ResourcesView />}
           {tab === 'replay' && <ReplayView />}
         </main>
